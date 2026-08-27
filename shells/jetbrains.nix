@@ -1,5 +1,7 @@
-{ pkgs, name ? "jetbrains-env" }:
-
+{
+  pkgs,
+  name ? "jetbrains-env",
+}:
 pkgs.mkShell {
   inherit name;
 
@@ -11,15 +13,11 @@ pkgs.mkShell {
   buildInputs = with pkgs; [];
 
   runtimeDependencies = with pkgs; [
-    stdenv
-    callPackage
-    fetchurl
-
     jdk
     zlib
     python3
     lldb
-    dotnet-sdk_7
+    dotnet-sdk_8
     maven
     openssl
     expat
@@ -27,7 +25,6 @@ pkgs.mkShell {
     libxcrypt-legacy
     fontconfig
     libxml2
-    runCommand
     musl
     R
     libgcc

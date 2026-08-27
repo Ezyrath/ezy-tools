@@ -1,4 +1,5 @@
 .idea
+megalinter-reports
 .direnv
 result
 result-*

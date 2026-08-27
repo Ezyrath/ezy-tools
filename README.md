@@ -11,11 +11,11 @@ The repository provides several CLI utilities located in [`bin/`](./bin):
 ### 1. `ezy_dev`
 Manages development toolchains, installations, and launches isolated Nix FHS environments.
 
-| Command | Description |
-| :--- | :--- |
-| `ezy_dev install [-y]` | Installs Rust (via `rustup`), SpacetimeDB CLI, Antigravity CLI (`agy`), Antigravity 2, Antigravity IDE, and cargo utilities (`cbindgen`, `cargo-edit`, `cargo-make`). |
-| `ezy_dev update` | Updates all installed toolchains, SpacetimeDB, Antigravity suites, and cargo tools. |
-| `ezy_dev shell` | Spawns the `dev` Nix development shell (`.#dev`). |
+| Command                 | Description                                                                                                                                                                                               |
+|:------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ezy_dev install [-y]`  | Installs Rust (via `rustup`), SpacetimeDB CLI, Antigravity CLI (`agy`), Antigravity 2, Antigravity IDE, and cargo utilities (`cbindgen`, `cargo-edit`, `cargo-make`).                                     |
+| `ezy_dev update`        | Updates all installed toolchains, SpacetimeDB, Antigravity suites, and cargo tools.                                                                                                                       |
+| `ezy_dev shell`         | Spawns the `dev` Nix development shell (`.#dev`).                                                                                                                                                         |
 | `ezy_dev sandbox [CMD]` | Enters an isolated Nix Level 2 FHS sandbox with an isolated `HOME` directory (`~/.local/share/ezy_dev_sandbox/home`), keeping your real `~/.ssh` and sensitive configurations fully hidden and protected. |
 
 ---
@@ -23,26 +23,26 @@ Manages development toolchains, installations, and launches isolated Nix FHS env
 ### 2. `ezy_nix_shell`
 CLI manager for Nix Flake development shells.
 
-| Command | Description |
-| :--- | :--- |
-| `ezy_nix_shell list` | Lists all available development environments in the flake. |
-| `ezy_nix_shell run [NAME] [ARGS...]` | Enters a specific dev shell (e.g. `dev`, `unreal`, `godot`, `jetbrains`, `empty`). Defaults to `dev`. |
-| `ezy_nix_shell install [NAME]` | Generates a standalone `shell.nix` in the current working directory referencing the selected environment. |
+| Command                              | Description                                                                                               |
+|:-------------------------------------|:----------------------------------------------------------------------------------------------------------|
+| `ezy_nix_shell list`                 | Lists all available development environments in the flake.                                                |
+| `ezy_nix_shell run [NAME] [ARGS...]` | Enters a specific dev shell (e.g. `dev`, `unreal`, `godot`, `jetbrains`, `empty`). Defaults to `dev`.     |
+| `ezy_nix_shell install [NAME]`       | Generates a standalone `shell.nix` in the current working directory referencing the selected environment. |
 
 ---
 
 ### 3. `ezy_unreal`
 Unreal Engine source manager, build automation, and project workflow helper.
 
-| Command | Description |
-| :--- | :--- |
-| `ezy_unreal list` | Lists all installed Unreal Engine versions/commits under `~/.local/share/unreal-engine`. |
-| `ezy_unreal install <COMMIT>` | Clones and compiles Unreal Engine from source for the specified Git commit, tag, or branch. |
-| `ezy_unreal delete <COMMIT>` | Deletes the specified engine build and cleans engine association in `Install.ini`. |
-| `ezy_unreal run <COMMIT>` | Runs Unreal Editor for the specified version (loads project if a `.uproject` is in the current directory). |
-| `ezy_unreal launch <COMMIT>` | Compiles the project development target (`make <Project>Editor-Linux-Development`) and starts Unreal Editor. |
+| Command                        | Description                                                                                                                                                |
+|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ezy_unreal list`              | Lists all installed Unreal Engine versions/commits under `~/.local/share/unreal-engine`.                                                                   |
+| `ezy_unreal install <COMMIT>`  | Clones and compiles Unreal Engine from source for the specified Git commit, tag, or branch.                                                                |
+| `ezy_unreal delete <COMMIT>`   | Deletes the specified engine build and cleans engine association in `Install.ini`.                                                                         |
+| `ezy_unreal run <COMMIT>`      | Runs Unreal Editor for the specified version (loads project if a `.uproject` is in the current directory).                                                 |
+| `ezy_unreal launch <COMMIT>`   | Compiles the project development target (`make <Project>Editor-Linux-Development`) and starts Unreal Editor.                                               |
 | `ezy_unreal generate <COMMIT>` | Generates project files, updates engine association, patches VS Code launch configurations for LLDB, and creates `compile_commands.json` for Zed / clangd. |
-| `ezy_unreal verify <COMMIT>` | Runs a headless compile check of all Blueprints in the project (`-run=CompileAllBlueprints -unattended -NullRHI`). |
+| `ezy_unreal verify <COMMIT>`   | Runs a headless compile check of all Blueprints in the project (`-run=CompileAllBlueprints -unattended -NullRHI`).                                         |
 
 ---
 
@@ -64,10 +64,10 @@ ezy_sync <SOURCE> <DESTINATION>
 ### 5. `ezy_kde`
 Simplified session management utility for KDE Plasma.
 
-| Command | Description |
-| :--- | :--- |
+| Command         | Description                                                                                            |
+|:----------------|:-------------------------------------------------------------------------------------------------------|
 | `ezy_kde close` | Gracefully closes the active KDE session via DBus (`qdbus org.kde.ksmserver /KSMServer logout 0 0 0`). |
-| `ezy_kde help` | Displays help message. |
+| `ezy_kde help`  | Displays help message.                                                                                 |
 
 ---
 

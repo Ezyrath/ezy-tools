@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "**/.git/**",
+    "megalinter-reports/**",
+    ".direnv/**",
+    "result/**",
+    "result-*/**"
+  ],
+  "words": [
+    "alejandra",
+    "cbindgen",
+    "compgen",
+    "COMPREPLY",
+    "cppdbg",
+    "CUDA",
+    "cword",
+    "CWORD",
+    "deadnix",
+    "direnv",
+    "elif",
+    "esac",
+    "Ezyrath",
+    "ksmserver",
+    "lldb",
+    "LLDB",
+    "mktemp",
+    "nixpkgs",
+    "pkgs",
+    "qdbus",
+    "readlink",
+    "rustup",
+    "shellcheck",
+    "statix",
+    "tlsv",
+    "tmpfs",
+    "uproject",
+    "UPROJECT"
+  ]
+}

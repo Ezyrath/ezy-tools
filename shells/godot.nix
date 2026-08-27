@@ -1,5 +1,7 @@
-{ pkgs, name ? "godot-env" }:
-
+{
+  pkgs,
+  name ? "godot-env",
+}:
 pkgs.mkShell {
   inherit name;
 

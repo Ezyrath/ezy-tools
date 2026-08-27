@@ -1,14 +1,11 @@
 {
   pkgs,
   wl-inject ? null,
-}:
-
-let
+}: let
   wlInjectPkg =
-    if wl-inject != null then
-      wl-inject
-    else
-      (builtins.getFlake "github:Ezyrath/wl-inject").packages.${pkgs.stdenv.hostPlatform.system}.default;
+    if wl-inject != null
+    then wl-inject
+    else (builtins.getFlake "github:Ezyrath/wl-inject").packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   deps = with pkgs; [
     # builder + builder-helper
@@ -119,31 +116,31 @@ let
     # ------------------
   ];
 in
-pkgs.buildFHSEnv {
-  name = "dev";
-  targetPkgs = pkgs: deps;
-  multiPkgs = pkgs: deps;
+  pkgs.buildFHSEnv {
+    name = "dev";
+    targetPkgs = _pkgs: deps;
+    multiPkgs = _pkgs: deps;
 
-  # add xdg-open to the environment for unreal engine
-  extraBuildCommands = ''
-    mkdir -p $out/usr/bin
-    ln -s ${pkgs.xdg-utils}/bin/xdg-open $out/usr/bin/xdg-open
-  '';
+    # add xdg-open to the environment for unreal engine
+    extraBuildCommands = ''
+      mkdir -p $out/usr/bin
+      ln -s ${pkgs.xdg-utils}/bin/xdg-open $out/usr/bin/xdg-open
+    '';
 
-  profile = ''
-    # spacetime + rust
-    export PATH="/home/ezyrath/.local/bin:$PATH"
-    . "$HOME/.cargo/env"
-    export JAVA_HOME=${pkgs.temurin-bin-25}
+    profile = ''
+      # spacetime + rust
+      export PATH="/home/ezyrath/.local/bin:$PATH"
+      . "$HOME/.cargo/env"
+      export JAVA_HOME=${pkgs.temurin-bin-25}
 
-    # unused for new
-    # # JetBrains IDEs — symlink only .sh launchers to avoid polluting PATH with internal binaries
-    # _jb_bin="$HOME/.local/share/JetBrains/launchers"
-    # mkdir -p "$_jb_bin"
-    # for _sh in "$HOME/.local/share/JetBrains/Toolbox/apps"/*/bin/*.sh; do
-    #   [ -f "$_sh" ] && ln -sf "$_sh" "$_jb_bin/$(basename "$_sh" .sh)"
-    # done
-    # export PATH="$_jb_bin:$PATH"
-    # unset _jb_bin _sh
-  '';
-}
+      # unused for new
+      # # JetBrains IDEs — symlink only .sh launchers to avoid polluting PATH with internal binaries
+      # _jb_bin="$HOME/.local/share/JetBrains/launchers"
+      # mkdir -p "$_jb_bin"
+      # for _sh in "$HOME/.local/share/JetBrains/Toolbox/apps"/*/bin/*.sh; do
+      #   [ -f "$_sh" ] && ln -sf "$_sh" "$_jb_bin/$(basename "$_sh" .sh)"
+      # done
+      # export PATH="$_jb_bin:$PATH"
+      # unset _jb_bin _sh
+    '';
+  }

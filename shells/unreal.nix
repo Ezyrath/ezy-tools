@@ -1,6 +1,4 @@
-{ pkgs }:
-
-let
+{pkgs}: let
   dep = with pkgs; [
     pkg-config
     openssl
@@ -65,15 +63,15 @@ let
     # ------------------
   ];
 in
-pkgs.buildFHSEnv {
-  name = "unreal-engine";
-  targetPkgs = pkgs: dep;
-  multiPkgs = pkgs: dep;
-  runScript = "bash";
-  profile = ''
-    export CUDA_PATH=${pkgs.cudatoolkit}
-    export SDL_VIDEODRIVER=wayland,x11
-    export PATH="/home/ezyrath/.local/bin:$PATH"
-    . "$HOME/.cargo/env"
-  '';
-}
+  pkgs.buildFHSEnv {
+    name = "unreal-engine";
+    targetPkgs = _pkgs: dep;
+    multiPkgs = _pkgs: dep;
+    runScript = "bash";
+    profile = ''
+      export CUDA_PATH=${pkgs.cudatoolkit}
+      export SDL_VIDEODRIVER=wayland,x11
+      export PATH="/home/ezyrath/.local/bin:$PATH"
+      . "$HOME/.cargo/env"
+    '';
+  }

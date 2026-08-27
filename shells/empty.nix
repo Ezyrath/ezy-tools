@@ -1,5 +1,7 @@
-{ pkgs, name ? "empty-env" }:
-
+{
+  pkgs,
+  name ? "empty-env",
+}:
 pkgs.mkShell {
   inherit name;
 
