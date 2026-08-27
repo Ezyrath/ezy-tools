@@ -72,6 +72,7 @@ in
     multiPkgs = _pkgs: dep;
     runScript = "bash";
     profile = ''
+      export SHELL=/bin/bash
       export CUDA_PATH=${pkgs.cudatoolkit}
       export SDL_VIDEODRIVER=wayland,x11
       export PATH="/home/ezyrath/.local/bin:$PATH"

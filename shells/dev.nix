@@ -131,6 +131,8 @@ in
     '';
 
     profile = ''
+      export SHELL=/bin/bash
+
       # spacetime + rust
       export PATH="/home/ezyrath/.local/bin:$PATH"
       . "$HOME/.cargo/env"

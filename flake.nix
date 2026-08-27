@@ -61,10 +61,19 @@
           inherit system;
           config.allowUnfree = true;
         };
+        makeFhsShell = name: pkg: binName:
+          pkgs.mkShell {
+            inherit name;
+            packages = [pkgs.bashInteractive pkg];
+            shellHook = ''
+              export SHELL=/bin/bash
+              exec ${pkg}/bin/${binName}
+            '';
+          };
       in {
         default = self.devShells.${system}.dev;
-        dev = self.packages.${system}.dev.env;
-        unreal = self.packages.${system}.unreal.env;
+        dev = makeFhsShell "dev" self.packages.${system}.dev "dev";
+        unreal = makeFhsShell "unreal" self.packages.${system}.unreal "unreal-engine";
         godot = import ./shells/godot.nix {inherit pkgs;};
         jetbrains = import ./shells/jetbrains.nix {inherit pkgs;};
         empty = import ./shells/empty.nix {inherit pkgs;};
