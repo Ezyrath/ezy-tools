@@ -8,6 +8,9 @@
     else (builtins.getFlake "github:Ezyrath/wl-inject").packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   deps = with pkgs; [
+    # interactive shell
+    bashInteractive
+
     # builder + builder-helper
     pkg-config
     cfssl # for kubernetes

@@ -1,5 +1,8 @@
 {pkgs}: let
   dep = with pkgs; [
+    # interactive shell
+    bashInteractive
+
     pkg-config
     openssl
     gnumake
