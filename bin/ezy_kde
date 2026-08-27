@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+function help() {
+  echo "this script is for kde command simplified"
+  echo "help  -- show command"
+  echo "close -- close the current kde session started"
+}
+
+function close() {
+    qdbus org.kde.ksmserver /KSMServer logout 0 0 0
+}
+
+case $1 in
+help)
+  help
+  ;;
+close)
+  close
+  ;;
+*)
+  help
+  ;;
+esac

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+read -s -p "Rclone password : " RCLONE_CONFIG_PASS
+export RCLONE_CONFIG_PASS
+
+rclone check $1 $2 --checkers 64 --drive-pacer-min-sleep 10ms -P
+
+read -r -p "Sync ? [y/N]: " CONFIRM
+if [[ $CONFIRM != [yY] ]]; then
+  echo "sync canceled"
+  exit 1
+fi
+
+rclone sync $1 $2 --drive-chunk-size 128M --drive-pacer-min-sleep 10ms --drive-pacer-burst 200 --transfers 8 --checkers 16 -P
+rclone check $1 $2 --checkers 64 --drive-pacer-min-sleep 10ms -P

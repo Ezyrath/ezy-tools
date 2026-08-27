@@ -1,0 +1,14 @@
+_ezy_dev() {
+  local cur prev
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  local commands="install update shell sandbox help"
+
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+    return 0
+  fi
+}
+
+complete -F _ezy_dev ezy_dev

@@ -1,0 +1,242 @@
+#! /usr/bin/env bash
+
+# script for build unreal-engine from source
+# TODO autocomplete
+
+UNREAL_INSTALL_DIR=~/.local/share/unreal-engine
+UNREAL_INSTALL_INI=~/.config/Epic/UnrealEngine/Install.ini
+COMMIT=$2
+
+# verify $COMMIT is set
+function verify_COMMIT() {
+  if [ -z "$COMMIT" ]; then
+    echo "Error : You are not choice a COMMIT !"
+    help
+  fi
+}
+
+# get the .uproject file path in the current directory
+function get_project_path() {
+  find "$(pwd)" -maxdepth 1 -name "*.uproject"
+}
+
+function list() {
+  # shellcheck disable=SC2011
+  ls "$UNREAL_INSTALL_DIR" | xargs -I % echo %
+}
+
+function install() {
+  verify_COMMIT
+
+  # verify is already installed
+  if [ -d "${UNREAL_INSTALL_DIR}/${COMMIT}" ]; then
+    echo "UnrealEngine COMMIT $COMMIT already installed !"
+    exit 1
+  fi
+
+  # verify make & git exist
+  if ! [ `command -v git` ]; then
+    echo "ERROR -- command git not found !"
+    exit 1
+  fi
+  if ! [ `command -v make` ]; then
+    echo "ERROR -- command make not found !"
+    exit 1
+  fi
+
+  # CONFIRM
+  echo "WARNING -- UnrealEngine repo is private, auth require !"
+  echo "WARNING -- use nix-shell specific for build and launch !"
+  echo -n "Install UnrealEngine $COMMIT ? [y/N]: "
+  read -r CONFIRM
+  
+  case $CONFIRM in
+  "y" | "Y")
+    ;;
+  *)
+    echo "--- ABORTED ---"
+    exit
+    ;;
+  esac
+
+  echo "--- BUILD $COMMIT ---"
+
+  # copy UE specific COMMIT
+  mkdir -p "${UNREAL_INSTALL_DIR}/${COMMIT}"
+  cd "${UNREAL_INSTALL_DIR}/${COMMIT}" || exit
+  git init
+  git remote add origin git@github.com:EpicGames/UnrealEngine.git
+  git fetch --depth 1 origin "$COMMIT"
+  git checkout FETCH_HEAD || exit 1
+
+  # build engine
+  ./Setup.sh
+  ./GenerateProjectFiles.sh
+  make
+
+  # fix ide auto fetch + free space
+  rm -rf .git
+
+  echo "--- FINISH ---"
+}
+
+function delete() {
+  # CONFIRM
+  echo -n "Delete UnrealEngine $COMMIT ? [y/N]: "
+  read -r CONFIRM
+
+  case $CONFIRM in
+  "y" | "Y")
+    ;;
+  *)
+    echo "--- ABORTED ---"
+    exit
+    ;;
+  esac
+
+  echo "--- DELETE $COMMIT ---"
+  rm -Rf "${UNREAL_INSTALL_DIR:?}/${COMMIT:?}"
+
+  # clean engine association
+  sed -i "s|^[-}{0-9A-Za-z_]*=${UNREAL_INSTALL_DIR:?}/${COMMIT:?}||g" $UNREAL_INSTALL_INI
+
+  echo "--- FINISH ---"
+}
+
+function run() {
+  verify_COMMIT
+
+  #launch editor with project if present
+  PROJECT_PATH=$(get_project_path)
+  if [ -n "$PROJECT_PATH" ]; then
+    "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Binaries/Linux/UnrealEditor" "$PROJECT_PATH"
+  else
+    "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Binaries/Linux/UnrealEditor"
+  fi
+}
+
+function launch() {
+  verify_COMMIT
+
+  PROJECT_PATH=$(get_project_path)
+  if [ -z "$PROJECT_PATH" ]; then
+    echo "Error : No .uproject found in current directory !"
+    exit 1
+  fi
+
+  PROJECT_NAME=$(basename "$PROJECT_PATH" .uproject)
+  echo "--- BUILDING ${PROJECT_NAME}Editor ---"
+  make "${PROJECT_NAME}Editor-Linux-Development" || exit 1
+
+  echo "--- LAUNCHING UNREAL EDITOR ---"
+  "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Binaries/Linux/UnrealEditor" "$PROJECT_PATH"
+}
+
+function generate() {
+  verify_COMMIT
+
+  #get uproject path
+  PROJECT_PATH=$(get_project_path)
+
+  #update engine association
+  ENGINE_ID=$(grep "${COMMIT}$" "$UNREAL_INSTALL_INI" | cut -d "=" -f 1)
+  UPROJECT=$(find "$(pwd)" -name "*.uproject" | head -n 1)
+  UPROJECT=$(basename "$UPROJECT")
+  
+  # update UPROJECT engine association with sed
+  sed -i "s/\"EngineAssociation.*/\"EngineAssociation\": \"${ENGINE_ID}\",/" "$UPROJECT"
+
+  #generate project
+  "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh" -project="$PROJECT_PATH" -game -engine -vscode
+
+  # Patch launch configurations to use lldb
+  echo "--- PATCHING LAUNCH CONFIGURATION FOR LLDB ---"
+  PROJECT_DIR=$(dirname "$PROJECT_PATH")
+  PROJECT_NAME=$(basename "$PROJECT_PATH" .uproject)
+
+  # Patch .vscode/launch.json if it exists
+  if [ -f "$PROJECT_DIR/.vscode/launch.json" ]; then
+    sed -i 's/"type": "cppdbg"/"type": "lldb"/g' "$PROJECT_DIR/.vscode/launch.json"
+    echo "Patched $PROJECT_DIR/.vscode/launch.json"
+  fi
+
+  # Patch .code-workspace files
+  find "$PROJECT_DIR" -maxdepth 1 -name "*.code-workspace" -print0 | while IFS= read -r -d '' workspace_file; do
+    sed -i 's/"type": "cppdbg"/"type": "lldb"/g' "$workspace_file"
+    echo "Patched $workspace_file"
+  done
+
+  # Setup compile_commands.json for Zed / clangd
+  echo "--- CONFIGURING COMPILE_COMMANDS FOR ZED / CLANGD ---"
+  if [ -f "$PROJECT_DIR/.vscode/compileCommands_${PROJECT_NAME}Editor.json" ]; then
+    ln -sf ".vscode/compileCommands_${PROJECT_NAME}Editor.json" "$PROJECT_DIR/compile_commands.json"
+    echo "Linked .vscode/compileCommands_${PROJECT_NAME}Editor.json -> compile_commands.json"
+  elif [ -f "$PROJECT_DIR/.vscode/compileCommands_Default.json" ]; then
+    ln -sf ".vscode/compileCommands_Default.json" "$PROJECT_DIR/compile_commands.json"
+    echo "Linked .vscode/compileCommands_Default.json -> compile_commands.json"
+  else
+    LATEST_CC=$(find "$PROJECT_DIR/.vscode" -maxdepth 1 -name "compileCommands_*.json" 2>/dev/null | head -n 1)
+    if [ -n "$LATEST_CC" ]; then
+      ln -sf ".vscode/$(basename "$LATEST_CC")" "$PROJECT_DIR/compile_commands.json"
+      echo "Linked .vscode/$(basename "$LATEST_CC") -> compile_commands.json"
+    fi
+  fi
+}
+
+function verify() {
+  verify_COMMIT
+
+  #get uproject path
+  PROJECT_PATH=$(get_project_path)
+
+  #verify blueprint
+  "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Binaries/Linux/UnrealEditor" "$PROJECT_PATH" -run=CompileAllBlueprints -unattended -NullRHI
+}
+
+function help() {
+  printf "%s\n" \
+  "
+--- LIST COMMANDS ---
+help                  ->  list all commands
+list                  ->  list all UnrealEngine COMMIT installed
+install   [COMMIT]    ->  install UnrealEngine specific COMMIT
+delete    [COMMIT]    ->  delete UnrealEngine specific COMMIT
+run       [COMMIT]    ->  run UnrealEditor specific COMMIT
+launch    [COMMIT]    ->  build (make) & run project, specific COMMIT
+generate  [COMMIT]    ->  generate project specific COMMIT
+verify    [COMMIT]    ->  verify/compile all blueprint in the project, specific COMMIT
+  "
+}
+
+# verify .unreal-engine exist
+if [ ! -d "$UNREAL_INSTALL_DIR" ]; then
+  echo "$UNREAL_INSTALL_DIR DIR not exist ! create..."
+  mkdir "$UNREAL_INSTALL_DIR"
+fi
+
+case $1 in
+"list")
+  list
+  ;;
+"install")
+  install
+  ;;
+"delete")
+  delete
+  ;;
+"run")
+  run
+  ;;
+"launch")
+  launch
+  ;;
+"generate")
+  generate
+  ;;
+"verify")
+  verify
+  ;;
+*)
+  help
+  ;;
+esac

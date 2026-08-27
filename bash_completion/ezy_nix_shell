@@ -1,0 +1,22 @@
+_ezy_nix_shell() {
+  local cur prev
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  local commands="run install list"
+  local shells="dev unreal godot jetbrains empty"
+
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+    return 0
+  fi
+
+  case "$prev" in
+    run|install)
+      COMPREPLY=( $(compgen -W "$shells" -- "$cur") )
+      return 0
+      ;;
+  esac
+}
+
+complete -F _ezy_nix_shell ezy_nix_shell

@@ -1,0 +1,34 @@
+# bash completion for ezy_unreal
+# Source this file or place it in /etc/bash_completion.d/ezy_unreal
+# or in ~/.local/share/bash-completion/completions/ezy_unreal
+
+_ezy_unreal_commits() {
+  local install_dir="${UNREAL_INSTALL_DIR:-$HOME/.local/share/unreal-engine}"
+  if [ -d "$install_dir" ]; then
+    ls "$install_dir" 2>/dev/null
+  fi
+}
+
+_ezy_unreal() {
+  local cur prev words cword
+  _init_completion || return
+
+  local commands="list install delete run launch generate verify help"
+
+  case $cword in
+    1)
+      # Complete subcommand
+      COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+      ;;
+    2)
+      # Complete COMMIT for commands that require it
+      case $prev in
+        install|delete|run|launch|generate|verify)
+          COMPREPLY=( $(compgen -W "$(_ezy_unreal_commits)" -- "$cur") )
+          ;;
+      esac
+      ;;
+  esac
+}
+
+complete -F _ezy_unreal ezy_unreal

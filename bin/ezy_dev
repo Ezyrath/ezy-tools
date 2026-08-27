@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+
+function help() {
+  echo "install     -> install dev-program and dependency (-y for non-interactive)"
+  echo "update      -> update dev-program and dependency"
+  echo "shell       -> enter dev-shell"
+  echo "sandbox     -> enter dev sandbox (isolated HOME via Nix FHS)"
+}
+
+function rust_tool_install() {
+  # install rust tool
+  cd ~
+  cargo install --force cbindgen
+  cargo install --force cargo-edit
+  cargo install --force cargo-make
+}
+
+function antigravity2_get_latest_url() {
+  local html
+  html=$(curl -sL --compressed https://antigravity.google/download 2>/dev/null)
+  echo "$html" | grep -oE 'https://storage\.googleapis\.com/antigravity-public/antigravity-hub/[^"]+/linux-x64/Antigravity\.tar\.gz' | head -n 1
+}
+
+function antigravity2_install() {
+  echo "--- Installing / Updating Antigravity 2 ---"
+  local INSTALL_DIR="${HOME}/.local/share/antigravity2"
+  local BIN_DIR="${HOME}/.local/bin"
+  local TMP_ARCHIVE="/tmp/Antigravity2.tar.gz"
+  local TARGET_URL="${ANTIGRAVITY2_URL:-$(antigravity2_get_latest_url)}"
+
+  if [ -z "$TARGET_URL" ]; then
+    echo "/!\\ ERROR: Unable to resolve Antigravity 2 download URL /!\\"
+    return 1
+  fi
+
+  mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+
+  echo "Downloading Antigravity 2 from ${TARGET_URL}..."
+  curl -fsSL "$TARGET_URL" -o "$TMP_ARCHIVE"
+
+  echo "Extracting archive to ${INSTALL_DIR}..."
+  rm -rf "${INSTALL_DIR:?}"/*
+  tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
+  rm -f "$TMP_ARCHIVE"
+
+  echo "Creating symlink ${BIN_DIR}/antigravity2..."
+  ln -sf "${INSTALL_DIR}/antigravity" "${BIN_DIR}/antigravity2"
+
+  echo "Antigravity 2 installation/update completed!"
+}
+
+function antigravity_ide_get_latest_url() {
+  local html
+  html=$(curl -sL --compressed https://antigravity.google/download 2>/dev/null)
+  echo "$html" | grep -oE 'https://edgedl\.me\.gvt1\.com/edgedl/release2/[^"]+/linux-x64/Antigravity%20IDE\.tar\.gz' | head -n 1
+}
+
+function antigravity_ide_install() {
+  echo "--- Installing / Updating Antigravity IDE ---"
+  local INSTALL_DIR="${HOME}/.local/share/antigravity-ide"
+  local BIN_DIR="${HOME}/.local/bin"
+  local TMP_ARCHIVE="/tmp/AntigravityIDE.tar.gz"
+  local TARGET_URL="${ANTIGRAVITY_IDE_URL:-$(antigravity_ide_get_latest_url)}"
+
+  if [ -z "$TARGET_URL" ]; then
+    echo "/!\\ ERROR: Unable to resolve Antigravity IDE download URL /!\\"
+    return 1
+  fi
+
+  mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+
+  echo "Downloading Antigravity IDE from ${TARGET_URL}..."
+  curl -fsSL "$TARGET_URL" -o "$TMP_ARCHIVE"
+
+  echo "Extracting archive to ${INSTALL_DIR}..."
+  rm -rf "${INSTALL_DIR:?}"/*
+  tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
+  rm -f "$TMP_ARCHIVE"
+
+  echo "Creating symlink ${BIN_DIR}/antigravity-ide..."
+  ln -sf "${INSTALL_DIR}/antigravity-ide" "${BIN_DIR}/antigravity-ide"
+
+  echo "Antigravity IDE installation/update completed!"
+}
+
+function install() {
+  # install rust
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh ${1:+-y}
+
+  # install spacetime
+  curl -sSf https://install.spacetimedb.com | sh
+
+  # install antigravity cli, antigravity 2 & antigravity ide
+  curl -fsSL https://antigravity.google/cli/install.sh | bash
+  antigravity2_install
+  antigravity_ide_install
+
+  # install rust tools with cargo
+  [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+  rust_tool_install
+}
+
+function update() {
+  # update rust + spacetime + antigravity cli + antigravity 2 + antigravity ide
+  rustup update
+  spacetime version upgrade
+  agy update
+  antigravity2_install
+  antigravity_ide_install
+
+  # update rust tools with cargo
+  rust_tool_install
+}
+
+function shell() {
+  local SCRIPTS_DIR="$(get_scripts_dir)"
+  local FLAKE_SOURCE="${SCRIPTS_DIR}"
+  if [ ! -f "${FLAKE_SOURCE}/flake.nix" ]; then
+    FLAKE_SOURCE="github:Ezyrath/ezy-tools"
+  fi
+  exec nix develop --extra-experimental-features "nix-command flakes" "${FLAKE_SOURCE}#dev" "$@"
+}
+
+function get_scripts_dir() {
+  local REAL_PATH
+  REAL_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+  local DIR_PARENT
+  DIR_PARENT="$(cd "$(dirname "$REAL_PATH")/.." 2>/dev/null && pwd)"
+
+  # Never treat ~/.local as the scripts repository root
+  if [ -f "${DIR_PARENT}/flake.nix" ] && [ "${DIR_PARENT}" != "${HOME}/.local" ]; then
+    echo "$DIR_PARENT"
+  elif [ -n "${EZY_TOOLS_DIR}" ] && [ -d "${EZY_TOOLS_DIR}" ]; then
+    echo "${EZY_TOOLS_DIR}"
+  elif [ -f "${HOME}/.config/nix/shells/ezy-tools/flake.nix" ]; then
+    echo "${HOME}/.config/nix/shells/ezy-tools"
+  elif [ -f "${HOME}/Documents/ezy-tools/flake.nix" ]; then
+    echo "${HOME}/Documents/ezy-tools"
+  elif [ -f "${HOME}/.config/nix/shells/flake.nix" ]; then
+    echo "${HOME}/.config/nix/shells"
+  else
+    echo "github:Ezyrath/ezy-tools"
+  fi
+}
+
+function sandbox() {
+  local SCRIPTS_DIR="$(get_scripts_dir)"
+  local SANDBOX_HOME="${HOME}/.local/share/ezy_dev_sandbox/home"
+  local USER_NAME="$(id -un)"
+  local CURRENT_PWD="$PWD"
+
+  mkdir -p "$SANDBOX_HOME" "${SANDBOX_HOME}/.local/bin"
+
+  # Sync latest bin scripts into sandbox .local/bin so they are always available in PATH
+  if [ -d "${SCRIPTS_DIR}/bin" ]; then
+    cp -uf "${SCRIPTS_DIR}/bin/"* "${SANDBOX_HOME}/.local/bin/" 2>/dev/null
+    chmod 700 "${SANDBOX_HOME}/.local/bin/"* 2>/dev/null
+  fi
+
+  echo "--- Entering Native Nix Level 2 Sandbox ---"
+  echo "    Isolated HOME: ${SANDBOX_HOME}"
+  echo "    Workspace:     ${CURRENT_PWD}"
+  echo "    Scripts Repo:  ${SCRIPTS_DIR} (Read-Only)"
+  echo "    Real HOME (~/.ssh, ~/.config, documents) is 100% protected and hidden."
+
+  # Check if sandbox tools are installed in sandbox HOME
+  if [ ! -f "${SANDBOX_HOME}/.cargo/env" ]; then
+    echo "--- First run: Installing dev tools into sandbox HOME ---"
+    HOME="$SANDBOX_HOME" "$0" install -y
+  fi
+
+  # Prepare extra read-only bind for scripts repo if outside PWD
+  local SCRIPTS_BIND=""
+  if [ "$CURRENT_PWD" != "$SCRIPTS_DIR" ]; then
+    SCRIPTS_BIND="--ro-bind \"${SCRIPTS_DIR}\" \"${SCRIPTS_DIR}\""
+  fi
+
+  local FLAKE_SOURCE="${SCRIPTS_DIR}"
+  if [ ! -f "${FLAKE_SOURCE}/flake.nix" ]; then
+    FLAKE_SOURCE="github:Ezyrath/ezy-tools"
+  fi
+
+  local TMP_NIX
+  TMP_NIX=$(mktemp --suffix=.nix)
+
+  cat << EOF_NIX > "$TMP_NIX"
+let
+  flake = builtins.getFlake "${FLAKE_SOURCE}";
+  system = builtins.currentSystem;
+  pkgs = import flake.inputs.nixpkgs { inherit system; config.allowUnfree = true; };
+  fhsDrv = flake.packages.\${system}.dev;
+  sandboxDrv = pkgs.runCommand "dev-sandbox" {} ''
+    mkdir -p \$out/bin
+    sed -e 's|ignored=(/nix /dev /proc /etc )|ignored=(/nix /dev /proc /etc /home )|g' \
+        -e 's|--proc /proc|--proc /proc --tmpfs /home --dir /home/${USER_NAME} --bind "${SANDBOX_HOME}" "/home/${USER_NAME}" --bind "${CURRENT_PWD}" "${CURRENT_PWD}" ${SCRIPTS_BIND} --unshare-pid|g' \
+        \${fhsDrv}/bin/dev > \$out/bin/dev
+    chmod +x \$out/bin/dev
+  '';
+in
+sandboxDrv
+EOF_NIX
+
+  local FHS_BIN
+  FHS_BIN=$(nix-build --extra-experimental-features "nix-command flakes" "$TMP_NIX" --no-out-link)
+  rm -f "$TMP_NIX"
+
+  if [ -x "${FHS_BIN}/bin/dev" ]; then
+    if [ $# -gt 0 ]; then
+      exec "${FHS_BIN}/bin/dev" "$@"
+    else
+      exec "${FHS_BIN}/bin/dev"
+    fi
+  else
+    echo "/!\\ ERROR: Failed to build sandbox FHS binary /!\\"
+    return 1
+  fi
+}
+
+case $1 in
+install)
+  install "$2"
+  ;;
+update)
+  update
+  ;;
+shell)
+  shell
+  ;;
+sandbox)
+  shift
+  sandbox "$@"
+  ;;
+help)
+  help
+  ;;
+*)
+  echo "/!\\ COMMAND INVALID /!\\"
+  help
+  ;;
+esac
