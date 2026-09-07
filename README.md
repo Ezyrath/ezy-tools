@@ -1,5 +1,9 @@
 # ezy-tools
 
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
+[![CI](https://github.com/Ezyrath/ezy-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/Ezyrath/ezy-tools/actions/workflows/ci.yml)
+[![Deps Update](https://github.com/Ezyrath/ezy-tools/actions/workflows/flake-update.yml/badge.svg)](https://github.com/Ezyrath/ezy-tools/actions/workflows/flake-update.yml)
+
 Personal tools, helper scripts, and development shells unified in a Nix Flake.
 
 ---
@@ -110,4 +114,3 @@ nix profile install .
 # Or run directly via flake
 nix run .#dev
 ```
-
