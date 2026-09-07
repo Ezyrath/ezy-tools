@@ -20,6 +20,7 @@
     glib
     gcc
     gdb
+    clang-tools
     cmake
     ninja
     maven
@@ -30,6 +31,7 @@
     # graphics dep
     vulkan-validation-layers
     vulkan-loader
+    vulkan-tools
     libGL
     libgbm
     libX11
@@ -117,6 +119,18 @@
     temurin-bin-25 # java optimized
     cloudflared # cloudflare cli
     # ------------------
+
+    # --- kubernetes & ops ----
+    ansible
+    sshpass
+    kubectl
+    kubernetes-helm
+    kubelogin-oidc
+    # -------------------------
+
+    # --- mobile / android ----
+    android-tools
+    # -------------------------
   ];
 in
   pkgs.buildFHSEnv {
