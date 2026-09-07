@@ -4,7 +4,7 @@ _ezy_nix_shell() {
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
   local commands="run install list"
-  local shells="dev unreal godot jetbrains empty"
+  local shells="dev jetbrains empty"
 
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$commands" -- "$cur") )

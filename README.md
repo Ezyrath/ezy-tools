@@ -26,7 +26,7 @@ CLI manager for Nix Flake development shells.
 | Command                              | Description                                                                                               |
 |:-------------------------------------|:----------------------------------------------------------------------------------------------------------|
 | `ezy_nix_shell list`                 | Lists all available development environments in the flake.                                                |
-| `ezy_nix_shell run [NAME] [ARGS...]` | Enters a specific dev shell (e.g. `dev`, `unreal`, `godot`, `jetbrains`, `empty`). Defaults to `dev`.     |
+| `ezy_nix_shell run [NAME] [ARGS...]` | Enters a specific dev shell (e.g. `dev`, `jetbrains`, `empty`). Defaults to `dev`.                        |
 | `ezy_nix_shell install [NAME]`       | Generates a standalone `shell.nix` in the current working directory referencing the selected environment. |
 
 ---
@@ -84,8 +84,6 @@ chrome [ARGS...]
 Available development environments defined in the flake:
 
 - **`dev`**: Full development environment (Rust, C++, Java, Node.js, Sway/Wayland libs, `wl-inject`, etc.).
-- **`unreal`**: Unreal Engine FHS build & runtime environment with CUDA support.
-- **`godot`**: Build environment for Godot Engine development.
 - **`jetbrains`**: JetBrains IDEs & SDKs environment.
 - **`empty`**: Clean, minimal development shell.
 
@@ -97,12 +95,11 @@ Available development environments defined in the flake:
 ```bash
 # Using nix develop directly
 nix develop .#dev
-nix develop .#unreal
-nix develop .#godot
+nix develop .#jetbrains
 
 # Or using the helper script
 ezy_nix_shell run dev
-ezy_nix_shell run unreal
+ezy_nix_shell run jetbrains
 ```
 
 ### Installing the tools

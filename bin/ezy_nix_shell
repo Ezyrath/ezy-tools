@@ -27,8 +27,6 @@ SHELL_NAME="$2"
 function list() {
   echo "Available Nix development environments in ${FLAKE_REF}:"
   echo "  - dev        (Full development FHS environment: Rust, C++, Java, Node, Sway, etc.) [default]"
-  echo "  - unreal     (Unreal Engine FHS build & runtime environment with CUDA)"
-  echo "  - godot      (Godot engine build environment)"
   echo "  - jetbrains  (JetBrains IDEs & SDKs environment)"
   echo "  - empty      (Clean minimal shell environment)"
 }
@@ -64,7 +62,7 @@ list)
 Usage: ezy_nix_shell <command> [arguments]
 
 Commands:
-  run      [NAME] [OPTIONS]  -- enter a specific dev shell (e.g. dev, unreal, godot)
+  run      [NAME] [OPTIONS]  -- enter a specific dev shell (e.g. dev, jetbrains, empty)
   install  [NAME]            -- generate a shell.nix in the current directory
   list                       -- list all available environments
     "

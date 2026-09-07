@@ -148,7 +148,7 @@ in
       export SHELL=/bin/bash
 
       # spacetime + rust
-      export PATH="/home/ezyrath/.local/bin:$PATH"
+      export PATH="$HOME/.local/bin:$PATH"
       . "$HOME/.cargo/env"
       export JAVA_HOME=${pkgs.temurin-bin-25}
 

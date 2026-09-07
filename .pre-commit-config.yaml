@@ -25,8 +25,16 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: nix-flake-check
+        name: nix flake check
+        entry: nix flake check
+        language: system
+        files: (\.nix|flake\.lock)$
+        pass_filenames: false
+        stages: [pre-commit]
+
   - repo: https://github.com/oxsecurity/megalinter
-    rev: v10.0.0
+    rev: v10.1.0
     hooks:
       - id: megalinter-incremental
         stages: [pre-commit]

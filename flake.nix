@@ -51,7 +51,12 @@
           inherit pkgs;
           wl-inject = wlInjectPkg;
         };
-        unreal = import ./shells/unreal.nix {inherit pkgs;};
+      }
+    );
+
+    checks = forAllSystems (
+      system: {
+        default = self.packages.${system}.default;
       }
     );
 
@@ -73,8 +78,6 @@
       in {
         default = self.devShells.${system}.dev;
         dev = makeFhsShell "dev" self.packages.${system}.dev "dev";
-        unreal = makeFhsShell "unreal" self.packages.${system}.unreal "unreal-engine";
-        godot = import ./shells/godot.nix {inherit pkgs;};
         jetbrains = import ./shells/jetbrains.nix {inherit pkgs;};
         empty = import ./shells/empty.nix {inherit pkgs;};
       }
