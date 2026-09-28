@@ -113,6 +113,9 @@ function update() {
 }
 
 function shell() {
+  if command -v dev >/dev/null 2>&1; then
+    exec dev "$@"
+  fi
   local SCRIPTS_DIR="$(get_scripts_dir)"
   local FLAKE_SOURCE="${SCRIPTS_DIR}"
   if [ ! -f "${FLAKE_SOURCE}/flake.nix" ]; then
@@ -224,7 +227,8 @@ update)
   update
   ;;
 shell)
-  shell
+  shift
+  shell "$@"
   ;;
 sandbox)
   shift

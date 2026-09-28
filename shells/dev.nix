@@ -146,6 +146,7 @@ in
 
     profile = ''
       export SHELL=/bin/bash
+      export name="dev"
 
       # spacetime + rust
       export PATH="$HOME/.local/bin:$PATH"
