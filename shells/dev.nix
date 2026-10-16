@@ -1,145 +1,155 @@
 {
   pkgs,
   wl-inject ? null,
+  ue-linux-win64 ? null,
 }: let
   wlInjectPkg =
     if wl-inject != null
     then wl-inject
     else (builtins.getFlake "github:Ezyrath/wl-inject").packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-  deps = with pkgs; [
-    # interactive shell
-    bashInteractive
+  ueLinuxWin64Pkg =
+    if ue-linux-win64 != null
+    then ue-linux-win64
+    else if pkgs.stdenv.hostPlatform.system == "x86_64-linux"
+    then (builtins.getFlake "github:Ezyrath/ue-linux-win64").packages.x86_64-linux.default
+    else null;
 
-    # builder + builder-helper
-    pkg-config
-    cfssl # for kubernetes
-    openssl
-    openssl.dev
-    gnumake
-    glib
-    gcc
-    gdb
-    clang-tools
-    cmake
-    ninja
-    maven
-    gradle
-    scons
-    linuxHeaders
+  deps =
+    (with pkgs; [
+      # interactive shell
+      bashInteractive
 
-    # graphics dep
-    vulkan-validation-layers
-    vulkan-loader
-    vulkan-tools
-    libGL
-    libgbm
-    libX11
-    libXcursor
-    libXinerama
-    libXext
-    libXrandr
-    libXrender
-    libXi
-    libXfixes
-    libXcomposite # for bridge ?
-    libXdamage # for bridge ?
-    libxkbcommon
-    wayland
-    wayland.dev
-    wayland-protocols
-    alsa-lib
-    libpulseaudio
-    dbus
-    dbus.lib
-    speechd
-    fontconfig
-    fontconfig.lib
-    fontconfig.dev
-    freetype
-    freetype.dev
-    udev
-    udev.dev
-    icu
+      # builder + builder-helper
+      pkg-config
+      cfssl # for kubernetes
+      openssl
+      openssl.dev
+      gnumake
+      glib
+      gcc
+      gdb
+      clang-tools
+      cmake
+      ninja
+      maven
+      gradle
+      scons
+      linuxHeaders
 
-    # fix install git-dependancy (test for the next build what is useless)
-    zlib
-    lldb
-    dotnet-sdk
-    expat
-    libxcrypt
-    libxcrypt-legacy
-    libxml2
-    libgcc
-    lttng-ust_2_12
-    xz
+      # graphics dep
+      vulkan-validation-layers
+      vulkan-loader
+      vulkan-tools
+      libGL
+      libgbm
+      libX11
+      libXcursor
+      libXinerama
+      libXext
+      libXrandr
+      libXrender
+      libXi
+      libXfixes
+      libXcomposite # for bridge ?
+      libXdamage # for bridge ?
+      libxkbcommon
+      wayland
+      wayland.dev
+      wayland-protocols
+      alsa-lib
+      libpulseaudio
+      dbus
+      dbus.lib
+      speechd
+      fontconfig
+      fontconfig.lib
+      fontconfig.dev
+      freetype
+      freetype.dev
+      udev
+      udev.dev
+      icu
 
-    # fix unreal-engine startup
-    nss
-    nspr
-    at-spi2-atk
-    mesa
-    pango
-    cairo
+      # fix install git-dependancy (test for the next build what is useless)
+      zlib
+      lldb
+      dotnet-sdk
+      expat
+      libxcrypt
+      libxcrypt-legacy
+      libxml2
+      libgcc
+      lttng-ust_2_12
+      xz
 
-    # fix libcef dep
-    libxcb
-    libdrm
+      # fix unreal-engine startup
+      nss
+      nspr
+      at-spi2-atk
+      mesa
+      pango
+      cairo
 
-    # ----- cypress ------
-    cups
-    gtk3
-    # --------------------
+      # fix libcef dep
+      libxcb
+      libdrm
 
-    # --- webview & audio ----
-    webkitgtk_4_1
-    alsa-utils
-    alsa-lib.dev
+      # ----- cypress ------
+      cups
+      gtk3
+      # --------------------
 
-    # GTK Deps
-    cairo
-    pango
-    gdk-pixbuf
-    atk
-    libsoup_3
+      # --- webview & audio ----
+      webkitgtk_4_1
+      alsa-utils
+      alsa-lib.dev
 
-    # proton-drive
-    libsecret
+      # GTK Deps
+      cairo
+      pango
+      gdk-pixbuf
+      atk
+      libsoup_3
 
-    # agent ui test x11/wayland app
-    sway
-    grim
-    wlInjectPkg
+      # proton-drive
+      libsecret
 
-    # ------------------------
+      # agent ui test x11/wayland app
+      sway
+      grim
+      wlInjectPkg
 
-    # --- optionnal ----
-    cmakeWithGui # ui for cmake (cmake-gui)
-    binaryen # wasm optimizer (used by spacetimedb)
-    temurin-bin-25 # java optimized
-    cloudflared # cloudflare cli
-    # ------------------
+      # ------------------------
 
-    # --- kubernetes & ops ----
-    ansible
-    sshpass
-    kubectl
-    kubernetes-helm
-    kubelogin-oidc
-    # -------------------------
+      # --- optionnal ----
+      cmakeWithGui # ui for cmake (cmake-gui)
+      binaryen # wasm optimizer (used by spacetimedb)
+      temurin-bin-25 # java optimized
+      cloudflared # cloudflare cli
+      # ------------------
 
-    # --- mobile / android ----
-    android-tools
-    # -------------------------
+      # --- kubernetes & ops ----
+      ansible
+      sshpass
+      kubectl
+      kubernetes-helm
+      kubelogin-oidc
+      # -------------------------
 
-    # --- unreal linux->win64 cross-compilation ---
-    xwin
-    llvmPackages_20.clang-unwrapped
-    llvmPackages_20.lld
-    llvmPackages_20.bintools-unwrapped
-    wine64Packages.stable
-    # ---------------------------------------------
-  ];
+      # --- mobile / android ----
+      android-tools
+      # -------------------------
+
+      # --- unreal linux->win64 cross-compilation ---
+      xwin
+      llvmPackages_20.clang-unwrapped
+      llvmPackages_20.lld
+      llvmPackages_20.bintools-unwrapped
+      wine64Packages.stable
+      # ---------------------------------------------
+    ])
+    ++ pkgs.lib.optional (ueLinuxWin64Pkg != null) ueLinuxWin64Pkg;
 in
   pkgs.buildFHSEnv {
     name = "dev";

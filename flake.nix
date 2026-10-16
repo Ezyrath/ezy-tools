@@ -7,12 +7,17 @@
       url = "github:Ezyrath/wl-inject";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    ue-linux-win64 = {
+      url = "github:Ezyrath/ue-linux-win64";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
     wl-inject,
+    ue-linux-win64,
     ...
   }: let
     supportedSystems = ["x86_64-linux" "aarch64-linux"];
@@ -25,6 +30,10 @@
           config.allowUnfree = true;
         };
         wlInjectPkg = wl-inject.packages.${system}.default;
+        ueLinuxWin64Pkg =
+          if system == "x86_64-linux"
+          then ue-linux-win64.packages.${system}.default
+          else null;
       in {
         default = pkgs.stdenv.mkDerivation {
           pname = "ezy-tools";
@@ -50,6 +59,7 @@
         dev = import ./shells/dev.nix {
           inherit pkgs;
           wl-inject = wlInjectPkg;
+          ue-linux-win64 = ueLinuxWin64Pkg;
         };
       }
     );

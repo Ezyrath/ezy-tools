@@ -37,6 +37,7 @@
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
+        "ue-linux-win64": "ue-linux-win64",
         "wl-inject": "wl-inject"
       }
     },
@@ -52,6 +53,26 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "ue-linux-win64": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792185602,
+        "narHash": "sha256-rJ9Lsecox8gFXRxDAO6AtdaTMR6FLFxUfIBI+KgT3qU=",
+        "owner": "Ezyrath",
+        "repo": "ue-linux-win64",
+        "rev": "c1312a2cddef1f1714ce51de1fcfac35fa06337e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Ezyrath",
+        "repo": "ue-linux-win64",
         "type": "github"
       }
     },
