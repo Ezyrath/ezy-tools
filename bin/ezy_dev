@@ -10,15 +10,15 @@ function help() {
 function rust_tool_install() {
   # install rust tool
   cd ~
-  cargo install --force cbindgen
-  cargo install --force cargo-edit
-  cargo install --force cargo-make
+  cargo install --locked cbindgen
+  cargo install --locked cargo-edit
+  cargo install --locked cargo-make
 }
 
 function antigravity2_get_latest_url() {
   local html
   html=$(curl -sL --compressed https://antigravity.google/download 2>/dev/null)
-  echo "$html" | grep -oE 'https://storage\.googleapis\.com/antigravity-public/antigravity-hub/[^"]+/linux-x64/Antigravity\.tar\.gz' | head -n 1
+  echo "$html" | grep -oE 'https://storage\.googleapis\.com/antigravity-public/antigravity-hub/[0-9][0-9A-Za-z._-]+/linux-x64/Antigravity\.tar\.gz' | head -n 1
 }
 
 function antigravity2_install() {
@@ -36,11 +36,19 @@ function antigravity2_install() {
   mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
   echo "Downloading Antigravity 2 from ${TARGET_URL}..."
-  curl -fsSL "$TARGET_URL" -o "$TMP_ARCHIVE"
+  if ! curl -fsSL "$TARGET_URL" -o "$TMP_ARCHIVE"; then
+    echo "/!\\ ERROR: Failed to download Antigravity 2 from ${TARGET_URL} /!\\"
+    rm -f "$TMP_ARCHIVE"
+    return 1
+  fi
 
   echo "Extracting archive to ${INSTALL_DIR}..."
   rm -rf "${INSTALL_DIR:?}"/*
-  tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
+  if ! tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1; then
+    echo "/!\\ ERROR: Failed to extract Antigravity 2 archive /!\\"
+    rm -f "$TMP_ARCHIVE"
+    return 1
+  fi
   rm -f "$TMP_ARCHIVE"
 
   echo "Creating symlink ${BIN_DIR}/antigravity2..."
@@ -183,26 +191,28 @@ EOF_NIX
   fi
 }
 
-case $1 in
-install)
-  install "$2"
-  ;;
-update)
-  update
-  ;;
-shell)
-  shift
-  shell "$@"
-  ;;
-sandbox)
-  shift
-  sandbox "$@"
-  ;;
-help)
-  help
-  ;;
-*)
-  echo "/!\\ COMMAND INVALID /!\\"
-  help
-  ;;
-esac
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  case $1 in
+  install)
+    install "$2"
+    ;;
+  update)
+    update
+    ;;
+  shell)
+    shift
+    shell "$@"
+    ;;
+  sandbox)
+    shift
+    sandbox "$@"
+    ;;
+  help)
+    help
+    ;;
+  *)
+    echo "/!\\ COMMAND INVALID /!\\"
+    help
+    ;;
+  esac
+fi

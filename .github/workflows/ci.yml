@@ -47,6 +47,31 @@ jobs:
           nix develop .#empty --command echo "empty shell OK"
           nix develop .#jetbrains --command echo "jetbrains shell OK"
 
+      - name: Test ezy_dev Antigravity 2 URL resolution and error safety
+        run: |
+          source ./bin/ezy_dev
+          url="$(antigravity2_get_latest_url)"
+          echo "Resolved Antigravity 2 URL: ${url}"
+          if [[ ! "$url" =~ /antigravity-hub/[0-9][0-9A-Za-z._-]+/linux-x64/Antigravity\.tar\.gz$ ]]; then
+            echo "ERROR: Invalid Antigravity 2 URL format: ${url}"
+            exit 1
+          fi
+          curl -fsSI "$url" >/dev/null
+
+          # Verify failed download does not wipe existing installation
+          tmp_home="$(mktemp -d)"
+          mkdir -p "${tmp_home}/.local/share/antigravity2"
+          touch "${tmp_home}/.local/share/antigravity2/sentinel"
+          if HOME="$tmp_home" ANTIGRAVITY2_URL="invalid://bad.tar.gz" antigravity2_install; then
+            echo "ERROR: antigravity2_install should have failed on unreachable URL"
+            exit 1
+          fi
+          if [ ! -f "${tmp_home}/.local/share/antigravity2/sentinel" ]; then
+            echo "ERROR: Existing installation was wiped after failed download"
+            exit 1
+          fi
+          rm -rf "$tmp_home"
+
   megalinter:
     name: MegaLinter
     runs-on: ubuntu-latest

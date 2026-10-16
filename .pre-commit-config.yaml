@@ -33,6 +33,26 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: ezy-dev-test
+        name: ezy_dev (url resolution & error safety)
+        entry: >-
+          bash -e -c '
+          source ./bin/ezy_dev;
+          url="$(antigravity2_get_latest_url)";
+          [[ "$url" =~ /antigravity-hub/[0-9][0-9A-Za-z._-]+/linux-x64/Antigravity\.tar\.gz$ ]];
+          curl -fsSI "$url" >/dev/null;
+          tmp_home="$(mktemp -d)";
+          mkdir -p "${tmp_home}/.local/share/antigravity2";
+          touch "${tmp_home}/.local/share/antigravity2/sentinel";
+          ! HOME="$tmp_home" ANTIGRAVITY2_URL="invalid://bad.tar.gz" antigravity2_install;
+          [ -f "${tmp_home}/.local/share/antigravity2/sentinel" ];
+          rm -rf "$tmp_home"
+          '
+        language: system
+        files: ^bin/ezy_dev$
+        pass_filenames: false
+        stages: [pre-commit]
+
   - repo: https://github.com/oxsecurity/megalinter
     rev: v10.1.0
     hooks:
