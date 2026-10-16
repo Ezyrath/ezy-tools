@@ -49,40 +49,6 @@ function antigravity2_install() {
   echo "Antigravity 2 installation/update completed!"
 }
 
-function antigravity_ide_get_latest_url() {
-  local html
-  html=$(curl -sL --compressed https://antigravity.google/download 2>/dev/null)
-  echo "$html" | grep -oE 'https://edgedl\.me\.gvt1\.com/edgedl/release2/[^"]+/linux-x64/Antigravity%20IDE\.tar\.gz' | head -n 1
-}
-
-function antigravity_ide_install() {
-  echo "--- Installing / Updating Antigravity IDE ---"
-  local INSTALL_DIR="${HOME}/.local/share/antigravity-ide"
-  local BIN_DIR="${HOME}/.local/bin"
-  local TMP_ARCHIVE="/tmp/AntigravityIDE.tar.gz"
-  local TARGET_URL="${ANTIGRAVITY_IDE_URL:-$(antigravity_ide_get_latest_url)}"
-
-  if [ -z "$TARGET_URL" ]; then
-    echo "/!\\ ERROR: Unable to resolve Antigravity IDE download URL /!\\"
-    return 1
-  fi
-
-  mkdir -p "$INSTALL_DIR" "$BIN_DIR"
-
-  echo "Downloading Antigravity IDE from ${TARGET_URL}..."
-  curl -fsSL "$TARGET_URL" -o "$TMP_ARCHIVE"
-
-  echo "Extracting archive to ${INSTALL_DIR}..."
-  rm -rf "${INSTALL_DIR:?}"/*
-  tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
-  rm -f "$TMP_ARCHIVE"
-
-  echo "Creating symlink ${BIN_DIR}/antigravity-ide..."
-  ln -sf "${INSTALL_DIR}/antigravity-ide" "${BIN_DIR}/antigravity-ide"
-
-  echo "Antigravity IDE installation/update completed!"
-}
-
 function install() {
   # install rust
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh ${1:+-y}
@@ -90,10 +56,9 @@ function install() {
   # install spacetime
   curl -sSf https://install.spacetimedb.com | sh
 
-  # install antigravity cli, antigravity 2 & antigravity ide
+  # install antigravity cli & antigravity 2
   curl -fsSL https://antigravity.google/cli/install.sh | bash
   antigravity2_install
-  antigravity_ide_install
 
   # install rust tools with cargo
   [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
@@ -101,12 +66,11 @@ function install() {
 }
 
 function update() {
-  # update rust + spacetime + antigravity cli + antigravity 2 + antigravity ide
+  # update rust + spacetime + antigravity cli + antigravity 2
   rustup update
   spacetime version upgrade
   agy update
   antigravity2_install
-  antigravity_ide_install
 
   # update rust tools with cargo
   rust_tool_install
