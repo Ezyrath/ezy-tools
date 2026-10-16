@@ -131,6 +131,13 @@
     # --- mobile / android ----
     android-tools
     # -------------------------
+
+    # --- unreal linux->win64 cross-compilation ---
+    xwin
+    llvmPackages_20.clang-unwrapped
+    llvmPackages_20.lld
+    llvmPackages_20.bintools-unwrapped
+    # ---------------------------------------------
   ];
 in
   pkgs.buildFHSEnv {
@@ -150,6 +157,9 @@ in
 
       # spacetime + rust
       export PATH="$HOME/.local/bin:$PATH"
+      if [ -d "$HOME/Documents/ue-linux-win64/bin" ]; then
+        export PATH="$HOME/Documents/ue-linux-win64/bin:$PATH"
+      fi
       . "$HOME/.cargo/env"
       export JAVA_HOME=${pkgs.temurin-bin-25}
 

@@ -13,7 +13,7 @@ _ezy_unreal() {
   local cur prev words cword
   _init_completion || return
 
-  local commands="list install delete run launch generate verify help"
+  local commands="list install delete run launch generate verify setup-win64 package-win64 help"
 
   case $cword in
     1)
@@ -23,10 +23,15 @@ _ezy_unreal() {
     2)
       # Complete COMMIT for commands that require it
       case $prev in
-        install|delete|run|launch|generate|verify)
+        install|delete|run|launch|generate|verify|setup-win64|package-win64)
           COMPREPLY=( $(compgen -W "$(_ezy_unreal_commits)" -- "$cur") )
           ;;
       esac
+      ;;
+    3)
+      if [ "${words[1]}" = "package-win64" ]; then
+        COMPREPLY=( $(compgen -W "DebugGame Development Shipping" -- "$cur") )
+      fi
       ;;
   esac
 }

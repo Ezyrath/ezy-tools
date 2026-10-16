@@ -20,6 +20,14 @@ function get_project_path() {
   find "$(pwd)" -maxdepth 1 -name "*.uproject"
 }
 
+function get_ue_linux_win64_bin() {
+  if command -v ue-linux-win64 >/dev/null 2>&1; then
+    command -v ue-linux-win64
+  elif [ -x "$HOME/Documents/ue-linux-win64/bin/ue-linux-win64" ]; then
+    echo "$HOME/Documents/ue-linux-win64/bin/ue-linux-win64"
+  fi
+}
+
 function list() {
   # shellcheck disable=SC2011
   ls "$UNREAL_INSTALL_DIR" | xargs -I % echo %
@@ -59,6 +67,13 @@ function install() {
     ;;
   esac
 
+  UE_WIN64_BIN=$(get_ue_linux_win64_bin)
+  ENABLE_WIN64="n"
+  if [ -n "$UE_WIN64_BIN" ]; then
+    echo -n "Enable Linux -> Windows (Win64) cross-compilation (ue-linux-win64) ? [y/N]: "
+    read -r ENABLE_WIN64
+  fi
+
   echo "--- BUILD $COMMIT ---"
 
   # copy UE specific COMMIT
@@ -71,8 +86,23 @@ function install() {
 
   # build engine
   ./Setup.sh
+
+  case $ENABLE_WIN64 in
+  "y" | "Y")
+    echo "--- APPLYING LINUX -> WIN64 CROSS-COMPILATION PATCH ---"
+    "$UE_WIN64_BIN" setup-engine "${UNREAL_INSTALL_DIR}/${COMMIT}" --skip-build
+    ;;
+  esac
+
   ./GenerateProjectFiles.sh
   make
+
+  case $ENABLE_WIN64 in
+  "y" | "Y")
+    echo "--- BUILDING WIN64 BOOTSTRAP ---"
+    ./Engine/Build/BatchFiles/Linux/Build.sh BootstrapPackagedGame Win64 Shipping
+    ;;
+  esac
 
   # fix ide auto fetch + free space
   rm -rf .git
@@ -146,6 +176,17 @@ function generate() {
   # update UPROJECT engine association with sed
   sed -i "s/\"EngineAssociation.*/\"EngineAssociation\": \"${ENGINE_ID}\",/" "$UPROJECT"
 
+  UE_WIN64_BIN=$(get_ue_linux_win64_bin)
+  if [ -n "$UE_WIN64_BIN" ] && [ -n "$PROJECT_PATH" ]; then
+    echo -n "Configure project for Linux -> Windows (Win64) cross-compilation (Vulkan + Clang) ? [y/N]: "
+    read -r CONFIG_WIN64
+    case $CONFIG_WIN64 in
+    "y" | "Y")
+      "$UE_WIN64_BIN" setup-project "$PROJECT_PATH"
+      ;;
+    esac
+  fi
+
   #generate project
   "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh" -project="$PROJECT_PATH" -game -engine -vscode
 
@@ -193,18 +234,51 @@ function verify() {
   "${UNREAL_INSTALL_DIR}/${COMMIT}/Engine/Binaries/Linux/UnrealEditor" "$PROJECT_PATH" -run=CompileAllBlueprints -unattended -NullRHI
 }
 
+function setup_win64() {
+  verify_COMMIT
+
+  UE_WIN64_BIN=$(get_ue_linux_win64_bin)
+  if [ -z "$UE_WIN64_BIN" ]; then
+    echo "ERROR -- ue-linux-win64 not found !"
+    exit 1
+  fi
+
+  "$UE_WIN64_BIN" setup-engine "${UNREAL_INSTALL_DIR}/${COMMIT}"
+}
+
+function package_win64() {
+  verify_COMMIT
+
+  PROJECT_PATH=$(get_project_path)
+  if [ -z "$PROJECT_PATH" ]; then
+    echo "Error : No .uproject found in current directory !"
+    exit 1
+  fi
+
+  UE_WIN64_BIN=$(get_ue_linux_win64_bin)
+  if [ -z "$UE_WIN64_BIN" ]; then
+    echo "ERROR -- ue-linux-win64 not found !"
+    exit 1
+  fi
+
+  BUILD_CONFIG="${3:-Shipping}"
+  "$UE_WIN64_BIN" package "$PROJECT_PATH" --engine "${UNREAL_INSTALL_DIR}/${COMMIT}" --config "$BUILD_CONFIG"
+}
+
 function help() {
   printf "%s\n" \
   "
 --- LIST COMMANDS ---
-help                  ->  list all commands
-list                  ->  list all UnrealEngine COMMIT installed
-install   [COMMIT]    ->  install UnrealEngine specific COMMIT
-delete    [COMMIT]    ->  delete UnrealEngine specific COMMIT
-run       [COMMIT]    ->  run UnrealEditor specific COMMIT
-launch    [COMMIT]    ->  build (make) & run project, specific COMMIT
-generate  [COMMIT]    ->  generate project specific COMMIT
-verify    [COMMIT]    ->  verify/compile all blueprint in the project, specific COMMIT
+help                             ->  list all commands
+list                             ->  list all UnrealEngine COMMIT installed
+install       [COMMIT]           ->  install UnrealEngine specific COMMIT
+delete        [COMMIT]           ->  delete UnrealEngine specific COMMIT
+run           [COMMIT]           ->  run UnrealEditor specific COMMIT
+launch        [COMMIT]           ->  build (make) & run project, specific COMMIT
+generate      [COMMIT]           ->  generate project specific COMMIT
+verify        [COMMIT]           ->  verify/compile all blueprint in the project, specific COMMIT
+setup-win64   [COMMIT]           ->  enable Linux -> Win64 cross-compilation on an installed COMMIT
+package-win64 [COMMIT] [CONFIG]  ->  cross-compile & package project for Windows (Win64)
   "
 }
 
@@ -235,6 +309,12 @@ case $1 in
   ;;
 "verify")
   verify
+  ;;
+"setup-win64")
+  setup_win64
+  ;;
+"package-win64")
+  package_win64 "$@"
   ;;
 *)
   help
